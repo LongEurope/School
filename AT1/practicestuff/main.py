@@ -15,7 +15,42 @@ kimchi_stew = Food(title='Kimchi Stew', price=13.50, image=r'School\AT1\practice
 all_foods = [burger, pizza, chicken, kimchi_stew]
 all_foods_string = ['burger', 'pizza', 'chicken', 'kimchi_stew']
 
-#Setting the menu layout
+#Setting and making the menu layout
+def goto_menu_screen():
+    global menu_window
+    menu_window = sg.Window('MENU', layout=menu_layout, size=(1000, 600))
+
+    while True:
+        event, values = menu_window.read()
+        #If event is closed
+        if event == sg.WIN_CLOSED:
+            break
+        #reset and confirm order stuff
+        elif event == 'RESET ORDER':
+            for food in all_foods:
+                food.amount = 0
+                for string in all_foods_string:
+                    menu_window[f'{string}_amount_textbox'].update(food.amount)
+        elif event == 'CONFIRM ORDER':
+            goto_order_screen()
+        #Attaching functions to buttons
+        elif event == 'burg+':
+            plus(burger, 'burger')
+        elif event == 'burg-':
+            minus(burger, 'burger')
+        elif event == 'pizz+':
+            plus(pizza, 'pizza')
+        elif event == 'pizz-':
+            minus(pizza, 'pizza')
+        elif event == 'chic+':
+            plus(chicken, 'chicken')
+        elif event == 'chic-':
+            minus(chicken, 'chicken')
+        elif event == 'kimc+':
+            plus(kimchi_stew, 'kimchi_stew')
+        elif event == 'kimc-':
+            minus(kimchi_stew, 'kimchi_stew')
+
 menu_layout = [
     [
         sg.Image(burger.image), 
@@ -46,11 +81,60 @@ menu_layout = [
         ])
     ],
     [
-        sg.Button('RESET ORDER', pad=((700, 0),(100, 0))),
-        sg.Button('CONFIRM ORDER', pad=((10, 0),(100, 0)))
+        sg.Push(),
+        sg.Button('RESET ORDER', pad=((0, 0), (100, 0))),
+        sg.Button('CONFIRM ORDER', pad=((10, 0), (100, 0)))
     ]
 ]
 
+#Setting and making order screen
+def goto_order_screen():
+    global ordered_foods
+    ordered_foods = []
+    for food in all_foods:
+        if food.amount > 0:
+            ordered_foods.append(food)
+    order_layout = create_order_screen()
+
+    order_window = sg.Window('ORDER', order_layout, size=(1000, 600))
+    while True:
+        event, values = order_window.read()
+        if event == sg.WIN_CLOSED:
+            break
+        elif event == 'BACK':
+            order_window.close()
+        elif event == 'CONFIRM ORDER':
+            order_window.close()
+            goto_payment_screen()
+
+def create_order_screen():
+    f_order_layout = []
+    total_price = 0
+    spacer_count = len(all_foods)
+    for present_food in ordered_foods:
+        price_for_food = float(present_food.price * present_food.amount)
+        total_price += price_for_food
+        spacer_count -= 1
+        f_order_layout.append([sg.Text(f'{present_food.amount} x {present_food.title}', size=(15, 1), background_color='white'), sg.Text(f'${"{:.2f}".format(price_for_food)}', size=(10, 1), background_color='white')])
+    f_order_layout.append([sg.Text('TOTAL', size=(15, 1), background_color='white'), sg.Text(f'${"{:.2f}".format(total_price)}', size=(10, 1), background_color='white')])
+    for _ in range(spacer_count):
+        f_order_layout.append([sg.Text('', size = (1, 1))])
+    f_order_layout.append([sg.Text('', size=(1, 25))])
+    f_order_layout.append([sg.Push(), sg.Button('BACK'), sg.Button('CONFIRM ORDER', pad=((10, 0), (0, 0)))])
+    return f_order_layout
+
+#Setting and making delivery information and payment screen:
+def goto_payment_screen():
+    payment_window = sg.Window('PAYMENT', layout=payment_layout, size=(1000, 600))
+
+    while True:
+        event, values = payment_window.read()
+        if event == sg.WIN_CLOSED:
+            payment_window.close()
+
+payment_layout = [
+    [sg.Text('Please enter your details')]
+]
 #functions adding and minusing amounts of foods
 def plus(food, strfood):
     if food.amount > 98:
@@ -66,37 +150,5 @@ def minus(food, strfood):
         food.amount -= 1
         menu_window[f'{strfood}_amount_textbox'].update(food.amount)
 
-menu_window = sg.Window('MENU', layout=menu_layout, size=(1000, 600))
-
-while True:
-    event, values = menu_window.read()
-    #If event is closed
-    if event == sg.WIN_CLOSED:
-        break
-    #reset and confirm order stuff
-    elif event == 'RESET ORDER':
-        for food in all_foods:
-            food.amount = 0
-            for string in all_foods_string:
-                menu_window[f'{string}_amount_textbox'].update(food.amount)
-    elif event == 'CONFIRM ORDER':
-        pass
-    #Attaching functions to buttons
-    elif event == 'burg+':
-        plus(burger, 'burger')
-    elif event == 'burg-':
-        minus(burger, 'burger')
-    elif event == 'pizz+':
-        plus(pizza, 'pizza')
-    elif event == 'pizz-':
-        minus(pizza, 'pizza')
-    elif event == 'chic+':
-        plus(chicken, 'chicken')
-    elif event == 'chic-':
-        minus(chicken, 'chicken')
-    elif event == 'kimc+':
-        plus(kimchi_stew, 'kimchi_stew')
-    elif event == 'kimc-':
-        minus(kimchi_stew, 'kimchi_stew')
-
-menu_window.close()
+#Main
+goto_menu_screen()
