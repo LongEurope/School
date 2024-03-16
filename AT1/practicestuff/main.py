@@ -7,7 +7,7 @@ from food import Food
 
 sg.theme('BlueMono')
 
-#Setting foods
+#Setting foods and variables
 burger = Food(title='Burger', price=8.90, image=r'School\AT1\practicestuff\burger.png')
 pizza = Food(title='Pizza', price=11.20, image=r'School\AT1\practicestuff\pizza.png')
 chicken = Food(title='Chicken', price=12.30, image=r'School\AT1\practicestuff\chicken.png')
@@ -15,6 +15,8 @@ kimchi_stew = Food(title='Kimchi Stew', price=13.50, image=r'School\AT1\practice
 all_foods = [burger, pizza, chicken, kimchi_stew]
 all_foods_string = ['burger', 'pizza', 'chicken', 'kimchi_stew']
 all_fields = ['Full Name I', 'Card Number I', 'Postcode I', 'Expiry Date I', 'Address I', 'CCV I']
+
+user_information = {}
 
 #Setting and making the menu layout
 def goto_menu_screen():
@@ -112,15 +114,16 @@ def create_order_screen():
     f_order_layout = []
     total_price = 0
     spacer_count = len(all_foods)
+    f_order_layout.append([sg.Text('Your order:', font=('Helvetica', 15, 'normal'))])
     for present_food in ordered_foods:
         price_for_food = float(present_food.price * present_food.amount)
         total_price += price_for_food
         spacer_count -= 1
-        f_order_layout.append([sg.Text(f'{present_food.amount} x {present_food.title}', size=(15, 1), background_color='white'), sg.Text(f'${"{:.2f}".format(price_for_food)}', size=(10, 1), background_color='white')])
-    f_order_layout.append([sg.Text('TOTAL', size=(15, 1), background_color='white'), sg.Text(f'${"{:.2f}".format(total_price)}', size=(10, 1), background_color='white')])
+        f_order_layout.append([sg.Text(f'{present_food.amount} x {present_food.title}', size=(60, 4), background_color='white'), sg.Text(f'${"{:.2f}".format(price_for_food)}', size=(40, 4), background_color='white')])
+    f_order_layout.append([sg.Text('TOTAL', size=(60, 4), background_color='white'), sg.Text(f'${"{:.2f}".format(total_price)}', size=(40, 4), background_color='white')])
     for _ in range(spacer_count):
-        f_order_layout.append([sg.Text('', size = (1, 1))])
-    f_order_layout.append([sg.Text('', size=(1, 25))])
+        f_order_layout.append([sg.Text('', size = (4, 4))])
+    f_order_layout.append([sg.Text('', size=(2, 8))])
     f_order_layout.append([sg.Push(), sg.Button('BACK'), sg.Button('CONFIRM ORDER', pad=((10, 0), (0, 0)))])
     return f_order_layout
 #Setting and making delivery information and payment screen:
@@ -134,7 +137,14 @@ def goto_payment_screen():
         elif event == 'CANCEL':
             payment_window.close()
         elif event == 'CONFIRM PAYMENT':
-            validation(payment_window)
+            if validation(payment_window):
+                user_information['Full Name'] = values['Full Name I']
+                user_information['Card Number'] = values['Card Number I']
+                user_information['Postcode'] = values['Postcode I']
+                user_information['Expiry Date'] = values['Expiry Date I']
+                user_information['Address'] = values['Address I']
+                user_information['CCV'] = values['CCV I']
+                goto_thank_you_screen()
 
 def create_payment_screen():
     total_price = 0
@@ -172,6 +182,30 @@ def create_payment_screen():
     ]
     return payment_layout
 
+#Setting and making thank you information screenL
+def goto_thank_you_screen():
+    thank_you_screen = sg.Window('THANK YOU', layout=create_thank_you_screen(), size=(1000, 600))
+
+    while True:
+        event, values = thank_you_screen.read()
+
+        if event == sg.WIN_CLOSED:
+            exit()
+
+def create_thank_you_screen():
+    goto_thank_you_layout = [
+        [sg.Push(), sg.Text('Thank you for Ordering!', font=('Helvetica', 30, 'normal')), sg.Push()],
+        [sg.Push(), sg.Text(f'Your order should be coming your way now {user_information["Full Name"].split()[0]}!', font=('Helvetica', 15, 'normal')), sg.Push()],
+        [sg.Push(), sg.Text('Your receipt:'), sg.Push()]
+    ]
+    total_price = 0
+    for present_food in ordered_foods:
+        price_for_food = float(present_food.price * present_food.amount)
+        total_price += price_for_food
+        goto_thank_you_layout.append([sg.Push(), sg.Text(f'{present_food.amount} x {present_food.title}', size=(15, 1), background_color='white'), sg.Text(f'${"{:.2f}".format(price_for_food)}', size=(10, 1), background_color='white'), sg.Push()])
+    goto_thank_you_layout.append([sg.Push(), sg.Text('You can close the window now.'), sg.Push()])
+    return goto_thank_you_layout
+
 #Check if all the fields are correct:
 def validation(win):
     invalid = False
@@ -187,7 +221,6 @@ def validation(win):
         if character != ' ':
             check_full_name += character
     if not check_full_name.isalpha():
-        print('Full name incorrect')
         invalid = True
     
     check_card_number = ''
@@ -196,23 +229,17 @@ def validation(win):
             check_card_number += digit
 
     if not check_card_number.isdigit() or not len(check_card_number) == 16:
-        print('Card number incorrect')
         invalid = True
     if not postcode.isdigit() or not len(postcode) == 4:
-        print('Postcode incorrect')
         invalid = True
     if not expiry_date[0:2].isdigit() or not expiry_date[2] == '/' or not expiry_date[3:5].isdigit() or not len(expiry_date) == 5:
-        print('Expiry Date incorrect')
         invalid = True
     if not address:
-        print('Address incorrect')
         invalid = True
     if not ccv.isdigit() or not len(ccv) == 3:
-        print('CCV incorrect')
         invalid = True
     
-    if not invalid:
-        print('Valid')
+    return not invalid
 
 #functions adding and minusing amounts of foods
 def plus(food, strfood):
