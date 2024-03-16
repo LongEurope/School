@@ -14,6 +14,7 @@ chicken = Food(title='Chicken', price=12.30, image=r'School\AT1\practicestuff\ch
 kimchi_stew = Food(title='Kimchi Stew', price=13.50, image=r'School\AT1\practicestuff\kimchistew.png')
 all_foods = [burger, pizza, chicken, kimchi_stew]
 all_foods_string = ['burger', 'pizza', 'chicken', 'kimchi_stew']
+all_fields = ['Full Name I', 'Card Number I', 'Postcode I', 'Expiry Date I', 'Address I', 'CCV I']
 
 #Setting and making the menu layout
 def goto_menu_screen():
@@ -97,6 +98,7 @@ def goto_order_screen():
     order_layout = create_order_screen()
 
     order_window = sg.Window('ORDER', order_layout, size=(1000, 600))
+
     while True:
         event, values = order_window.read()
         if event == sg.WIN_CLOSED:
@@ -104,7 +106,6 @@ def goto_order_screen():
         elif event == 'BACK':
             order_window.close()
         elif event == 'CONFIRM ORDER':
-            order_window.close()
             goto_payment_screen()
 
 def create_order_screen():
@@ -122,19 +123,97 @@ def create_order_screen():
     f_order_layout.append([sg.Text('', size=(1, 25))])
     f_order_layout.append([sg.Push(), sg.Button('BACK'), sg.Button('CONFIRM ORDER', pad=((10, 0), (0, 0)))])
     return f_order_layout
-
 #Setting and making delivery information and payment screen:
 def goto_payment_screen():
-    payment_window = sg.Window('PAYMENT', layout=payment_layout, size=(1000, 600))
+    payment_window = sg.Window('PAYMENT', layout=create_payment_screen(), size=(1000, 600))
 
     while True:
         event, values = payment_window.read()
         if event == sg.WIN_CLOSED:
+            break
+        elif event == 'CANCEL':
             payment_window.close()
+        elif event == 'CONFIRM PAYMENT':
+            validation(payment_window)
 
-payment_layout = [
-    [sg.Text('Please enter your details')]
-]
+def create_payment_screen():
+    total_price = 0
+    for present_food in ordered_foods:
+        price_for_food = float(present_food.price * present_food.amount)
+        total_price += price_for_food
+    payment_layout = [
+        [sg.Text('Please enter your details', font=('Helvetica', 30, 'normal'))],
+        [sg.Column([
+            [sg.Text('Full Name')],
+            [sg.Multiline(key='Full Name I', size=(40, 5), background_color='white')],
+            ]),
+        sg.Column([
+                [sg.Text('Card Number')],
+                [sg.Multiline(key='Card Number I', size=(40, 5), background_color='white')]
+        ])],
+        [sg.Column([
+            [sg.Text('Postcode')],
+            [sg.Multiline(key='Postcode I', size=(40, 5), background_color='white')],
+            ]),
+        sg.Column([
+                [sg.Text('Expiry Date')],
+                [sg.Multiline(key='Expiry Date I', size=(40, 5), background_color='white')]
+        ])],
+        [sg.Column([
+            [sg.Text('Address')],
+            [sg.Multiline(key='Address I', size=(40, 5), background_color='white')],
+            ]),
+        sg.Column([
+                [sg.Text('CCV')],
+                [sg.Multiline(key='CCV I', size=(40, 5), background_color='white')]
+        ])],
+        [sg.Text('', size=(1, 6))],
+        [sg.Push(), sg.Button('CANCEL'), sg.Button(f'PAY ${"{:.2f}".format(total_price)}', key='CONFIRM PAYMENT')]    
+    ]
+    return payment_layout
+
+#Check if all the fields are correct:
+def validation(win):
+    invalid = False
+    full_name = win['Full Name I'].get()
+    card_number = win['Card Number I'].get()
+    postcode = win['Postcode I'].get()
+    expiry_date = win['Expiry Date I'].get()
+    address = win['Address I'].get()
+    ccv = win['CCV I'].get()
+
+    check_full_name = ''
+    for character in full_name:
+        if character != ' ':
+            check_full_name += character
+    if not check_full_name.isalpha():
+        print('Full name incorrect')
+        invalid = True
+    
+    check_card_number = ''
+    for digit in card_number:
+        if digit != ' ':
+            check_card_number += digit
+
+    if not check_card_number.isdigit() or not len(check_card_number) == 16:
+        print('Card number incorrect')
+        invalid = True
+    if not postcode.isdigit() or not len(postcode) == 4:
+        print('Postcode incorrect')
+        invalid = True
+    if not expiry_date[0:2].isdigit() or not expiry_date[2] == '/' or not expiry_date[3:5].isdigit() or not len(expiry_date) == 5:
+        print('Expiry Date incorrect')
+        invalid = True
+    if not address:
+        print('Address incorrect')
+        invalid = True
+    if not ccv.isdigit() or not len(ccv) == 3:
+        print('CCV incorrect')
+        invalid = True
+    
+    if not invalid:
+        print('Valid')
+
 #functions adding and minusing amounts of foods
 def plus(food, strfood):
     if food.amount > 98:
